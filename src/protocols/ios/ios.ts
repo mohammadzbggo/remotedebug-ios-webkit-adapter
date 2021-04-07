@@ -590,12 +590,13 @@ export abstract class IOSProtocol extends ProtocolAdapter {
     private onConsoleMessageAdded(msg: any): Promise<any> {
         let message = msg.params.message;
         let type;
-        if (message.type === 'log') {
-            switch (message.level) {
-                case 'log': type = 'log'; break;
-                case 'info': type = 'info'; break;
-                case 'error': type = 'error'; break;
-                default: type = 'log';
+        let method = "Runtime.consoleAPICalled";
+        if (message.type === "log") {
+            switch(message.level) {
+                    case "log": type = "log"; break;
+                    case "info": type = "info"; break;
+                    case "error": type = "error"; break;
+                    default: type = "log";
             }
         } else {
             type = message.type;
@@ -611,13 +612,16 @@ export abstract class IOSProtocol extends ProtocolAdapter {
             stackTrace: message.stackTrace ? {
                 callFrames: message.stackTrace
             } : undefined,
-            networkRequestId: message.networkRequestId
+            args:message.parameters,
+            networkRequestId: message.networkRequestId,
         };
-
-        this._target.fireEventToTools('Log.entryAdded', {
-            entry: consoleMessage
-        });
-
+        if(type == "error") {
+            method = "Log.entryAdded"; 
+            this._target.fireEventToTools(method, {entry:consoleMessage});
+        } else {
+            this._target.fireEventToTools(method, consoleMessage);
+        }
+        
         return Promise.resolve(null);
     }
 
